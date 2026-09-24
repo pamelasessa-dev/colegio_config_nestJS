@@ -8,10 +8,14 @@ import type { JwtPayload } from '../auth/strategies/jwt.strategy.js';
 import { Role } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateGradeDto } from './dto/create-grade.dto.js';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GradesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async upsert(dto: CreateGradeDto, user: JwtPayload) {
     const subject = await this.prisma.subject.findUnique({
@@ -68,7 +72,10 @@ export class GradesService {
   }
 
   private withStatus<T extends { score: number }>(grade: T) {
-    const minPassingGrade = parseInt(process.env.MIN_PASSING_GRADE ?? '51', 10);
+    const minPassingGrade = this.configService.get<number>(
+      'MIN_PASSING_GRADE',
+      51,
+    );
     return { ...grade, approved: grade.score >= minPassingGrade };
   }
 }

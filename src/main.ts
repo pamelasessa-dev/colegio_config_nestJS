@@ -1,12 +1,16 @@
-import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
-  app.setGlobalPrefix(process.env.API_PREFIX ?? 'api');
+  app.setGlobalPrefix (
+    configService.getOrThrow<string>('API_PREFIX'),
+  );
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -14,9 +18,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
-
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  console.log(`🏫 API escuchando en http://localhost:${port}`);
+  await app.listen(
+    configService.getOrThrow<number>('PORT'),
+  );
 }
 await bootstrap();
